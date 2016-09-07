@@ -110,11 +110,12 @@
     android:fromAlpha="1.0"  
     android:toAlpha="0.1"  
     android:duration="2000"/>
-      
- 	<!--   fromAlpha :起始透明度  
-			toAlpha:结束透明度  
- 			1.0表示完全不透明  
- 			0.0表示完全透明  -->  
+    
+      <!--   fromAlpha :起始透明度  
+			  toAlpha:结束透明度  
+			  1.0表示完全不透明  
+			  0.0表示完全透明  -->  
+			  
 *** ``` TranslateAnimation：位移渐变，需要指定移动点的开始和结束坐标，对应<translate/>标签。 (rotate_demo.xml) ``` ***
 
 	<rotate xmlns:android="http://schemas.android.com/apk/res/android"  
@@ -222,6 +223,87 @@
 	imageView = (ImageView) findViewById(R.id.imageView1);
 	Animation animation = AnimationUtils.loadAnimation(this,R.anim.alpha_demo);  
     imageView.startAnimation(animation);
+    
+#### 属性动画 ：
+*** ``` 属性动画的原理： ``` ***
+	
+		属性动画要求动画作用的对象提供该属性的get和set方法，属性动画根据你传递的该熟悉的初始值和最终值，以动画的效果多次去调用set方法，每次传递给set方法的值都不一样，确切来说是随着时间的推移，所传递的值越来越接近最终值。
+** 总结一下，你对object的属性xxx做动画，如果想让动画生效，要同时满足两个条件： **
+
+*** ``` 1. object必须要提供setXxx方法，如果动画的时候没有传递初始值，那么还要提供getXxx方法，因为系统要去拿xxx属性的初始值（如果这条不满足，程序直接Crash）``` ***
+
+*** ```2. object的setXxx对属性xxx所做的改变必须能够通过某种方法反映出来，比如会带来ui的改变啥的（如果这条不满足，动画无效果但不会Crash） ```  ***
+
+** 以上条件缺一不可 **
+
+##### ``` 实现: ```
+
+** 1. 用一个类来包装原始对象，间接为其提供get和set方法 : **
+
+		private void performAnimate() {  
+    		ViewWrapper wrapper = new ViewWrapper(mButton);  
+    		ObjectAnimator.ofInt(wrapper, "width", 500).setDuration(5000).start();  
+    	}  
+    	
+    	@Override 
+    	public void onClick(View v) {  
+    		if (v == mButton) {  
+        		performAnimate();  
+    		}  
+    	}  
+    	private static class ViewWrapper {  
+    		private View mTarget;  
+  
+    		public ViewWrapper(View target) {  
+        		mTarget = target;  
+    		}  
+  
+    		public int getWidth() {  
+        		return mTarget.getLayoutParams().width;  
+    		}  
+  
+    		public void setWidth(int width) {  
+        		mTarget.getLayoutParams().width = width;  
+        		mTarget.requestLayout();  
+    		}  
+    	}  
+** 2. 采用ValueAnimator，监听动画过程，自己实现属性的改变 : **
+
+	private void performAnimate(final View target, final int start, final int end) {  
+    ValueAnimator valueAnimator = ValueAnimator.ofInt(1, 100);  
+  
+    valueAnimator.addUpdateListener(new AnimatorUpdateListener() {  
+  
+        //持有一个IntEvaluator对象，方便下面估值的时候使用  
+        private IntEvaluator mEvaluator = new IntEvaluator();  
+  
+        @Override  
+        public void onAnimationUpdate(ValueAnimator animator) {  
+            //获得当前动画的进度值，整型，1-100之间  
+            int currentValue = (Integer)animator.getAnimatedValue();  
+            Log.d(TAG, "current value: " + currentValue);  
+  
+            //计算当前进度占整个动画过程的比例，浮点型，0-1之间  
+            float fraction = currentValue / 100f;  
+  
+            //这里我偷懒了，不过有现成的干吗不用呢  
+            //直接调用整型估值器通过比例计算出宽度，然后再设给Button  
+            target.getLayoutParams().width = mEvaluator.evaluate(fraction, start, end);  
+            target.requestLayout();  
+        }  
+    });  
+  
+    	valueAnimator.setDuration(5000).start();  
+    
+    }
+      
+    @Override  
+    public void onClick(View v) {  
+    	if (v == mButton) {  
+        	performAnimate(mButton, mButton.getWidth(), 500);  
+    	}  
+    }  
+
 
 ### 软件版本号的更新 ：
 	首先调用getPackageManager()获取PackageManager	然后PackageManager对象调用getPackageInfo()获得PackageInfo对象	接着PackageInfo对象获取versionCode属性	最后获取服务器最新版本号与versionCode属性作比较

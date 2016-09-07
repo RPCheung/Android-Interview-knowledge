@@ -1,3 +1,4 @@
+# Android 面试过的知识点：
 ### Activity的生命周期：
 	
 	onCreate ——>onStar ——> onResume
@@ -52,6 +53,175 @@
 2. 对视频源文件进行处理，增加其关键帧数量，比如可以1s设置一个关键帧（基于目前已有的视频文件进行处理）。（如果选择第二种方式，要增加视频的关键帧数量，可以推荐大家使用FFmpeg进行增加关键帧的处理工作。[详情请看ffmpeg官网](http://ffmpeg.org/)
 
 	 *** ``` 原因 ： 其实seekTo跳转的位置其实并不是参数所带的position，而是离position最近的关键帧，而是从一个关键帧的位置开始。``` ***
+	 
+### Activity与Fragment通讯 ：
+	1. 在Fragment里使用getActivity()
+	2. 在Activity里使用getFragmentManager()
+
+### 参数传递
+	java在传递的参数时，传递的的只是对象的引用的副本，方法改变不了形参的对象，但对象的属性可以改变（副本引用也和引用指向同一对象）
+	
+### Android屏幕适配
+##### dp、dip、dpi、sp、px之间的关系 :
+	dip：Density Independent Pixels（密度无关像素）的缩写。以160dpi为基准，1dp=1px 
+	dp：同dip dpi：屏幕像素密度的单位，“dot per inch”的缩写 
+	px：像素，物理上的绝对单位
+	sp：Scale-Independent Pixels的缩写，可以根据文字大小首选项自动进行缩放。Google推荐我们使用12sp以上的大小，通常可以使用12sp，14sp，18sp，	22sp，最好不要使用奇数和小数。
+
+![](http://img.mukewang.com/564d3ae300018ec605780445.png)
+	
+*** 说明：如果A设备的参数为480×320，160dpi，B设置的参数为800×480，240dpi。我们要画出一条和屏幕宽度一样长的直线，如果使用px作为单位，必须在A设备上设置为320px，在B设备上设置480px。但是如果我们使用dp作为单位，由于以160dpi为基准，1dp=1px，所以A设备上设置为320dp就等于屏幕宽度（320px），在B设备上设置为320dp就等于320×（240/160）=480px，即B设备的屏幕宽度。这样，使用dp作为单位就可以实现简单的屏幕适配。这知识一种巧合，也有B设备的像素密度不是这样刚刚好的，就需要我们运用别的屏幕适配技术。 ***
+##### mdpi、hdpi、xdpi、xxdpi、xxxdpi计算和区分 :
+
+![](http://img.mukewang.com/564d3c830001880e06190222.jpg)
+![](http://img.mukewang.com/564d3c8d0001652910000380.png)
+*** 在Google官方开发文档中，说明了 mdpi：hdpi：xhdpi：xxhdpi：xxxhdpi=2：3：4：6：8 的尺寸比例进行缩放。例如，一个图标的大小为48×48dp，表示在mdpi上，实际大小为48×48px，在hdpi像素密度上，实际尺寸为mdpi上的1.5倍，即72×72px，以此类推。 ***
+
+### Android 动画 ：
+#### 逐帧动画 ：
+*** ``` 1、先将图片素材放入res/drawable目录下 ``` ***
+
+*** ``` 2、创建Animation-list帧布局文件，文件存放在res/drawable目录下（animation1.xml） : ``` ***
+	
+		<animation-list  xmlns:android="http://schemas.android.com/apk/res/android"  
+		 android:oneshot="true">  
+    		<item android:drawable="@drawable/icon1" android:duration="150"/>
+    	</animation-list> 
+
+*** ``` 设置播放动画的ImageView （主要将src设为 ：animation1.xml）： ``` ***
+
+	 	<ImageView android:id="@+id/animationIV"  
+            android:layout_width="wrap_content"  
+            android:layout_height="wrap_content"  
+            android:padding="5px"  
+            android:src="@drawable/animation1"/> 
+            
+*** ``` 在java中初始化ImageView，设置播放动画 ： ``` ***
+
+	animationIV = (ImageView) findViewById(R.id.animationIV);  
+    animationDrawable = (AnimationDrawable) animationIV.getDrawable();  
+    animationDrawable.start();  
+    
+#### 补间动画 ：
+*** ``` AlphaAnimation：透明度（alpha）渐变效果，对应<alpha/>标签。 (alpha_demo.xml)``` ***
+
+	<alpha xmlns:android="http://schemas.android.com/apk/res/android"  
+    android:interpolator="@android:anim/accelerate_decelerate_interpolator"  
+    android:fromAlpha="1.0"  
+    android:toAlpha="0.1"  
+    android:duration="2000"/>
+      
+ 	<!--   fromAlpha :起始透明度  
+			toAlpha:结束透明度  
+ 			1.0表示完全不透明  
+ 			0.0表示完全透明  -->  
+*** ``` TranslateAnimation：位移渐变，需要指定移动点的开始和结束坐标，对应<translate/>标签。 (rotate_demo.xml) ``` ***
+
+	<rotate xmlns:android="http://schemas.android.com/apk/res/android"  
+    android:interpolator="@android:anim/accelerate_decelerate_interpolator"  
+    android:fromDegrees="0"  
+    android:toDegrees="360"  
+    android:duration="1000"  
+    android:repeatCount="1"  
+    android:repeatMode="reverse"/>  
+    
+	<!--   
+	fromDegrees:表示旋转的起始角度  
+	toDegrees:表示旋转的结束角度  
+	repeatCount:旋转的次数  默认值是0 代表旋转1次  如果值是repeatCount=4 旋转5次，值为-1或者infinite时，表示补间动画永不停止  
+	repeatMode 设置重复的模式。默认是restart。当repeatCount的值大于0或者为infinite时才有效。  
+	repeatCount=-1 或者infinite 循环了  
+	还可以设成reverse，表示偶数次显示动画时会做与动画文件定义的方向相反的方向动行。--> 
+
+*** ```此效果有两种java调用方式 ：(TranslateAnimation)``` ***
+		
+		TranslateAnimation translateAnimation = new TranslateAnimation(0, 200, 0, 0); 
+		translateAnimation.setDuration(2000); 
+    	imageView.startAnimation(translateAnimation);  
+
+
+*** ``` ScaleAnimation：缩放渐变，可以指定缩放的参考点，对应<scale/>标签。 (scale_demo.xml) ``` ***
+
+	<scale xmlns:android="http://schemas.android.com/apk/res/android"  
+    android:interpolator="@android:anim/accelerate_interpolator"  
+    android:fromXScale="0.2"  
+    android:toXScale="1.5"  
+    android:fromYScale="0.2"  
+    android:toYScale="1.5"  
+    android:pivotX="50%"  
+    android:pivotY="50%"  
+    android:duration="2000"/>  
+  
+	<!--   
+	fromXScale:表示沿着x轴缩放的起始比例  
+	toXScale:表示沿着x轴缩放的结束比例  
+	fromYScale:表示沿着y轴缩放的起始比例  
+	toYScale:表示沿着y轴缩放的结束比例  
+	图片中心点：  
+	android:pivotX="50%"   
+    android:pivotY="50%"  -->  
+
+
+*** ``` RotateAnimation：旋转渐变，可以指定旋转的参考点，对应<rotate/>  (translate_demo.xml)``` ***
+
+	<translate xmlns:android="http://schemas.android.com/apk/res/android"  
+    android:interpolator="@android:anim/accelerate_decelerate_interpolator"  
+    android:fromXDelta="0"  
+    android:toXDelta="320"  
+    android:fromYDelta="0"  
+    android:toYDelta="0"  
+    android:duration="2000"/>   
+      
+	<!--   android:interpolator 动画的渲染器  
+	1、accelerate_interpolator(动画加速器) 使动画在开始的时候 最慢,然后逐渐加速  
+	2、decelerate_interpolator(动画减速器)使动画在开始的时候 最快,然后逐渐减速  
+	3、accelerate_decelerate_interpolator（动画加速减速器）  中间位置分层:  使动画在开始的时候 最慢,然后逐渐加速使动画在开始的时候 最快,然后逐渐减速  结束的位置最慢  
+	fromXDelta  动画起始位置的横坐标  
+	toXDelta    动画起结束位置的横坐标  
+	fromYDelta  动画起始位置的纵坐标  
+	toYDelta   动画结束位置的纵坐标  
+	duration 动画的持续时间  	-->  
+
+*** ``` AnimationSet：组合渐变，支持组合多种渐变效果，对应<set/> ``` ***
+
+	<set xmlns:android="http://schemas.android.com/apk/res/android"  
+    android:interpolator="@android:anim/decelerate_interpolator"  
+    android:shareInterpolator="true" >  
+  
+    <scale  
+        android:duration="2000"  
+        android:fromXScale="0.2"  
+        android:fromYScale="0.2"  
+        android:pivotX="50%"  
+        android:pivotY="50%"  
+        android:toXScale="1.5"  
+        android:toYScale="1.5" />  
+  
+    <rotate  
+        android:duration="1000"  
+        android:fromDegrees="0"  
+        android:repeatCount="1"  
+        android:repeatMode="reverse"  
+        android:toDegrees="360" />  
+  
+    <translate  
+        android:duration="2000"  
+        android:fromXDelta="0"  
+        android:fromYDelta="0"  
+        android:toXDelta="320"  
+        android:toYDelta="0" />  
+  
+    <alpha  
+        android:duration="2000"  
+        android:fromAlpha="1.0"  
+        android:toAlpha="0.1" />  
+  
+	</set>  
+*** ``` 把图片设置到ImageView的src ，最后java中设置ImageView 代码如下 ： ``` ***
+
+	imageView = (ImageView) findViewById(R.id.imageView1);
+	Animation animation = AnimationUtils.loadAnimation(this,R.anim.alpha_demo);  
+    imageView.startAnimation(animation);
 
 ### 软件版本号的更新 ：
 	首先调用getPackageManager()获取PackageManager	然后PackageManager对象调用getPackageInfo()获得PackageInfo对象	接着PackageInfo对象获取versionCode属性	最后获取服务器最新版本号与versionCode属性作比较

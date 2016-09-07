@@ -68,13 +68,13 @@
 	px：像素，物理上的绝对单位
 	sp：Scale-Independent Pixels的缩写，可以根据文字大小首选项自动进行缩放。Google推荐我们使用12sp以上的大小，通常可以使用12sp，14sp，18sp，	22sp，最好不要使用奇数和小数。
 
-![](http://img.mukewang.com/564d3ae300018ec605780445.png)
+![](https://github.com/RPCheung/Android-Interview-knowledge/blob/master/1.png)
 	
 *** 说明：如果A设备的参数为480×320，160dpi，B设置的参数为800×480，240dpi。我们要画出一条和屏幕宽度一样长的直线，如果使用px作为单位，必须在A设备上设置为320px，在B设备上设置480px。但是如果我们使用dp作为单位，由于以160dpi为基准，1dp=1px，所以A设备上设置为320dp就等于屏幕宽度（320px），在B设备上设置为320dp就等于320×（240/160）=480px，即B设备的屏幕宽度。这样，使用dp作为单位就可以实现简单的屏幕适配。这知识一种巧合，也有B设备的像素密度不是这样刚刚好的，就需要我们运用别的屏幕适配技术。 ***
 ##### mdpi、hdpi、xdpi、xxdpi、xxxdpi计算和区分 :
 
-![](http://img.mukewang.com/564d3c830001880e06190222.jpg)
-![](http://img.mukewang.com/564d3c8d0001652910000380.png)
+![](https://github.com/RPCheung/Android-Interview-knowledge/blob/master/2.jpg)
+![](https://github.com/RPCheung/Android-Interview-knowledge/blob/master/3.png)
 *** 在Google官方开发文档中，说明了 mdpi：hdpi：xhdpi：xxhdpi：xxxhdpi=2：3：4：6：8 的尺寸比例进行缩放。例如，一个图标的大小为48×48dp，表示在mdpi上，实际大小为48×48px，在hdpi像素密度上，实际尺寸为mdpi上的1.5倍，即72×72px，以此类推。 ***
 
 ### Android 动画 ：

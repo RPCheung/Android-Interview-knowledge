@@ -396,9 +396,13 @@ public
     7.注册Application
 
 ### Android子线程更新UI （正常开发不建议）:
-	奥秘在于ViewRoot的建立时间，它是在 ActivityThread.java的 final void handleResumeActivity(IBinder token, boolean clearHide, boolean isForward)里创建的
+	奥秘在于ViewRoot的建立时间，它是在 ActivityThread.java的 final void
+	handleResumeActivity(IBinder token, boolean clearHide, boolean isForward)
+	里创建的
 	
-	答案就是在Activity.onResume前，ViewRoot实例没有建立，所以没有ViewRoot.checkThread检查。而btn.setText时设定的文本却保留了下来，所以当ViewRoot真正去刷新界面时，就把"TestThread2.run"刷了出来！
+	答案就是在Activity.onResume前，ViewRoot实例没有建立，所以没有ViewRoot.checkThread检查。
+	而btn.setText时设定的文本却保留了下来，所以当ViewRoot真正去刷新界面时，
+	就把"TestThread2.run"刷了出来！
 
 ### 软件版本号的更新 ：
 	首先调用getPackageManager()获取PackageManager	然后PackageManager对象调用getPackageInfo()获得PackageInfo对象	接着PackageInfo对象获取versionCode属性	最后获取服务器最新版本号与versionCode属性作比较

@@ -304,6 +304,101 @@
     	}  
     }  
 
+### WebView的缓存 ：
+1. 有IO把HTML文件储存到手机 ：
+		
+		1. 定义一个离线下载的服务Service
+		2. 启动后台服务Service来执行异步下载
+		3. 存储到本地缓存文件夹或用DiskLruCache
+		4. 每一次加载url之前，先判断数据库是否存在缓存内容
+		5. 如果存在缓存，优先加载本地缓存，如果不，在，才执行联网请求(mWebView.loadUrl("file:///android_cache/01.html"))
+	[DiskLruCache详情请点击](http://blog.csdn.net/guolin_blog/article/details/28863651)
+2. 用webView的自带缓存 ：
+		
+		mWebView.getSettings().setRenderPriority(RenderPriority.HIGH);
+        // 建议缓存策略为，判断是否有网络，有的话，使用LOAD_DEFAULT,无网络时，使用LOAD_CACHE_ELSE_NETWORK
+ 
+        mWebView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK); // 设置缓存模式
+        // 开启DOM storage API 功能
+        mWebView.getSettings().setDomStorageEnabled(true);
+        // 开启database storage API功能
+        mWebView.getSettings().setDatabaseEnabled(true);
+        String cacheDirPath = getFilesDir().getAbsolutePath()+ APP_CACHE_DIRNAME;
+       
+        // 设置数据库缓存路径
+        mWebView.getSettings().setDatabasePath(cacheDirPath); // API 19 deprecated
+        // 设置Application caches缓存目录
+        mWebView.getSettings().setAppCachePath(cacheDirPath);
+        // 开启Application Cache功能
+        mWebView.getSettings().setAppCacheEnabled(true);
+
+### View的拖动 ：
+1. 如果你将滑动后的目标位置的坐标传递给layout()，这样子就会把view的位置给重新布置了一下，在视觉上就是view的一个滑动的效果。
+public
+		
+		public class DragView extends View{
+		
+  			private int lastX;
+  			private int lastY;
+  			
+  			public DragView(Context context, AttributeSet attrs) {
+    			super(context, attrs);
+  			}
+  			
+  			public boolean onTouchEvent(MotionEvent event) {
+  			
+    			//获取到手指处的横坐标和纵坐标
+    			int x = (int) event.getX();
+    			int y = (int) event.getY();
+    			
+    			switch(event.getAction()){
+    			
+      				case MotionEvent.ACTION_DOWN:
+      				
+        				lastX = x;
+        				lastY = y;
+        				
+      				break;
+      				
+      				case MotionEvent.ACTION_MOVE:
+        			
+        				//计算移动的距离
+        				int offX = x - lastX;
+        				int offY = y - lastY;
+        			
+        				//调用layout方法来重新放置它的位置
+        				layout(getLeft()+offX, getTop()+offY,getRight()+offX  , getBottom()+offY);
+          			
+      				break;
+    			}
+    		
+    			return true;
+  			}
+		} 
+		先记录一下down的坐标，然后记录move的坐标，相减得到偏移量，再与getLeft()、getTop()、
+		getRight()、getBottom() 得到相对位置，调用layout();
+		
+### 实现自定义全局异常捕捉并重启应用的类 :
+	
+	1. 自定义CrashHandler类实现UncaughtExceptionHandler接口 （用单例保持唯一对象）
+	2. 创建Thread.UncaughtExceptionHandler变量 mDefaultHandler
+	
+	//获取系统默认的UncaughtException处理器 
+	3. mDefaultHandler = Thread.getDefaultUncaughtExceptionHandler();
+	
+	//设置该CrashHandler为程序的默认处理器  
+    4. Thread.setDefaultUncaughtExceptionHandler(this);
+   
+    5. 自定义uncaughtException(Thread thread, Throwable ex)方法
+    
+    6. 自定义Application获取 CrashHandler
+    
+    7.注册Application
+
+### Android子线程更新UI （正常开发不建议）:
+	奥秘在于ViewRoot的建立时间，它是在 ActivityThread.java的 final void handleResumeActivity(IBinder token, boolean clearHide, boolean isForward)里创建的
+	
+	答案就是在Activity.onResume前，ViewRoot实例没有建立，所以没有ViewRoot.checkThread检查。而btn.setText时设定的文本却保留了下来，所以当ViewRoot真正去刷新界面时，就把"TestThread2.run"刷了出来！
 
 ### 软件版本号的更新 ：
 	首先调用getPackageManager()获取PackageManager	然后PackageManager对象调用getPackageInfo()获得PackageInfo对象	接着PackageInfo对象获取versionCode属性	最后获取服务器最新版本号与versionCode属性作比较

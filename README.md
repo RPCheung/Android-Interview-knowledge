@@ -10,6 +10,18 @@
 	
 	1. 尽量减少对Context和Fragment等有生命周期管理的对象使用static关键字
 	2. 如果Fragment要引用到静态对象，则可以对Fragment使用弱引用 
+
+### 单例模式的优缺点 ：
+
+优点 ：
+	 
+	 1. 在内存里只有一个实例，减少了内存的开销，尤其是频繁的创建和销毁实例
+	 2. 避免对资源的多重占用
+缺点 ：
+
+	1. 没有接口，不能继承
+	2. 在Android中容易造成内存泄漏 (单例中使用了 static 静态变量，导致四大组件在使用单例对象时，持有静态变量或被静态变量引用，导致生命周期过长，不能按照正常的生命周期被回收)
+
 ### Activity启动模式应用场景 :
 singleTop的应用场景 ：
 
@@ -602,6 +614,34 @@ public
 5. 网络存储
 
 ### 支付SDK ：
+
+### Github的常用命令行 ：
+	
+	git clone URL  克隆项目
+	
+	git init  初始化本地仓库
+	
+	git add .  添加当前工作目录文件
+	
+	git status 查看状态
+	
+	git rm file  删除指定文件
+	
+	git branch test 创建名为 test 的分支
+	
+	git checkout test 更改当前分支为 test
+	
+	git merge test 合并分支 (需切换到主分支)
+	
+	git branch -d test 删除 test 分支
+	
+	git reset HEAD  用于取消已缓存的内容 
+	
+	git commit -m '第一次版本提交' 缓存区内容添加到本地仓库中
+	
+	git pull   (以克隆) 取回更新
+	
+	git push [alias] [branch]    [branch] 分支推送成为 [alias] 远程仓库上的 [branch] 分支
 
 ### 数组与链表的区别 ：
 1. 数组 ：

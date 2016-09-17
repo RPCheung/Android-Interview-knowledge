@@ -7,18 +7,138 @@
 	
 	onDestroy<——onStop <——onPause### Fragment 的泄漏 ：** 原因 ：当Fragment的对象引用了静态变量或者被定义为静态对象时造成内存泄漏 **
 ** 解决方法 ： **
-1. 尽量减少对Context和Fragment等有生命周期管理的对象使用static关键字
-2.  如果Fragment要引用到静态对象，则可以对Fragment使用弱引用 ### MVP ：
+	
+	1. 尽量减少对Context和Fragment等有生命周期管理的对象使用static关键字
+	2. 如果Fragment要引用到静态对象，则可以对Fragment使用弱引用 
+### Activity启动模式应用场景 :
+singleTop的应用场景 ：
+
+	登录成功跳转到主页，按下两次登录按钮，生成了两个主页。一些有启动延迟的页面（往往是动画，网络造成）也会有这样的情况，为了防止两个重复的Activity，把Activity设置成singleTop
+	
+		还有一种场景 从activity A启动了个service进行耗时操作，或者某种监听，这个时候你home键了，service收集到信息，要返回activityA了，就用singleTop启动，实际不会创建新的activityA，只是resume了。不过使用standard又会创造2个A的实例。
+		
+singleTask的应用场景 ：
+
+	singleTask适合作为程序入口点。例如浏览器的主界面。不管从多少个应用启动浏览器，只会启动主界面一次，其余情况都会走onNewIntent，并且会清空主界面上面的其他页面。
+	
+singleInstance的应用场景 ：
+		
+		singleInstance适合需要与程序分离开的页面。例如闹铃提醒，将闹铃提醒与闹铃设置分离。singleInstance不要用于中间页面，如果用于中间页面，跳转会有问题，比如：A -> B (singleInstance) -> C，完全退出后，在此启动，首先打开的是B。
+
+### Activity的onNewIntent()方法何时会被调用 ：
+
+		当ActivityA的LaunchMode为SingleTop时，如果ActivityA在栈顶,且现在要再启动ActivityA，这时会调用onNewIntent()方法
+
+	当ActivityA的LaunchMode为SingleInstance,SingleTask时,如果已经ActivityA已经在堆栈中，那么此时会调用onNewIntent()方法
+
+	当ActivityA的LaunchMode为Standard时，由于每次启动ActivityA都是启动新的实例，和原来启动的没关系，所以不会调用原来ActivityA的onNewIntent方法
+	### MVP ：
 ** 优点：为了明确每个模块的功能，实现模块间的高内聚低耦合 **
 	
 	M 为 Model 是对数据的查找、储存、增加、删除；
 	V 为 View 是与用户交互的 （一般都由Activity 、Fragment来充当）；
-	P 为 Presenter 是View 与Model的纽带 （提供 View Interface让View实现，提供Model Interface让Model实现）；### 布局的优化 ：1. ** ``` 布局重用<include/> ``` **
-2. **  ``` 减少视图层级<merge/>  ：``` **多用于替换FrameLayout或者当一个布局包含另一个时，<merge/>标签消除视图层次结构中多余的视图组。例如你的主布局文件是垂直布局，引入了一个垂直布局的include，这是如果include布局使用的LinearLayout就没意义了，使用的话反而减慢你的UI表现。这时可以使用<merge/>标签优化 
+	P 为 Presenter 是View 与Model的纽带 （提供 View Interface让View实现，提供Model Interface让Model实现）；Model层抽象接口：
+	public interface IInfoModel {
+    	//从数据提供者获取数据方法
+    	InfoBean getInfo();
+    	//存入数据提供者方法
+    	void setInfo(InfoBean info);
+	}
+	
+Model层抽象实现：
+
+	public class InfoModelImpl implements IInfoModel {
+    	//模拟存储数据
+    	private InfoBean infoBean = new InfoBean();
+
+    	@Override
+    	public InfoBean getInfo() {
+        //模拟存储数据，真实有很多操作
+        	return infoBean;
+    	}
+
+    	@Override
+    	public void setInfo(InfoBean info) {
+        	//模拟存储数据，真实有很多操作
+        	infoBean = info;
+    	}
+	}
+	
+View层的抽象接口：
+	
+	public interface IInfoView {
+    	//给UI显示数据的方法
+    	void setInfo(InfoBean info);
+    	//从UI取数据的方法
+    	InfoBean getInfo();
+	}
+	
+Presenter的实现：
+	
+	public class Presenter {
+    	private IInfoModel infoModel;
+    	private IInfoView infoView;
+
+    	public Presenter(IInfoView infoView) {
+        	this.infoView = infoView;
+
+        	infoModel = new InfoModelImpl();
+    	}
+    	//供UI调运
+    	public void saveInfo(InfoBean bean) {
+        	infoModel.setInfo(bean);
+    	}
+    	//供UI调运
+    	public void getInfo() {
+        	//通过调用IInfoView的方法来更新显示，设计模式运用
+        	//类似回调监听处理
+        	infoView.setInfo(infoModel.getInfo());
+    	}
+	}
+
+View层的实现 ：
+	
+	public class MainActivity extends ActionBarActivity implements IInfoView,View.OnClickListener{
+	
+		private void initData() {
+        	presenter = new Presenter(this);
+        	
+        	infoTxt = (TextView) findViewById(R.id.show);(各种初始化控件)
+        	saveBtn.setOnClickListener(this);（各种监听的设置）
+        	....
+        }
+        
+        @Override
+    	public void setInfo(InfoBean info) {
+    		
+    		设置数据...
+    	}
+    	
+    	@Override
+    	public InfoBean getInfo() {
+    	
+    		获取数据...
+       	}
+       	
+       	@Override
+    	public void onClick(View v) {
+    	
+    		 switch (v.getId()) {
+            	case R.id.XXXX:
+                	presenter.saveInfo(getInfo());
+                break;
+            	case R.id.XXXXX:
+                	presenter.getInfo();
+               	break;
+        	}
+    	}
+	}
+	### 布局的优化 ：1. ** ``` 布局重用<include/> ``` **
+2. **  ``` 减少视图层级<merge/>  ：``` **多用于替换FrameLayout或者当一个布局包含另一个时，<merge/> 标签消除视图层次结构中多余的视图组。例如你的主布局文件是垂直布局，引入了一个垂直布局的include，这是如果include布局使用的LinearLayout就没意义了，使用的话反而减慢你的UI表现。这时可以使用<merge/>标签优化 
 
 3. ** ``` 需要时使用<ViewStub/> ： ``` **
-： <ViewStub />标签最大的优点是当你需要时才会加载，使用他并不会影响UI初始化时的性能。各种不常用的布局想进度条、显示错误消息等可以使用<ViewStub />标签，以减少内存使用量，加快渲染速度。<ViewStub />是一个不可见的，大小为0的View。
-** ``` 注：ViewStub目前有个缺陷就是还不支持 <merge /> 标签。``` **
+： <ViewStub/> 标签最大的优点是当你需要时才会加载，使用他并不会影响UI初始化时的性能。各种不常用的布局想进度条、显示错误消息等可以使用<ViewStub />标签，以减少内存使用量，加快渲染速度。<ViewStub />是一个不可见的，大小为0的View。
+** ``` 注：ViewStub目前有个缺陷就是还不支持 <merge/> 标签。``` **
 [详细代码请点击查看](http://blog.csdn.net/xyz_lmn/article/details/14524567) 
 
 ### WebView调用安卓以及数据的传递 :
@@ -404,5 +524,117 @@ public
 	而btn.setText时设定的文本却保留了下来，所以当ViewRoot真正去刷新界面时，
 	就把"TestThread2.run"刷了出来！
 
+### Android 五种储存方式 ：
+1. 文件储存（文件IO流） ：
+		
+		FileOutputStream out = openFileOutput("data",Context.MODE_PRIVATE);
+		ButteredWriter writer = new ButteredWriter(new OutputSreamWriter(out));
+		writer.write(data);
+2. SharedPreferences ：
+		
+		默认存储路径：/data/data/<PackageName>/shared_prefs.xml
+		
+		获取SharedPreferences对象的方法 :
+		
+			1. Context的getSharedPreferences()方法，参数一是文件名，参数二是操作模式
+			2. Activity的getPreferences()方法，参数为操作模式，使用当前应用程序包名为文件名
+			3. PreferenceManager的getDefaultSharedPreferences()静态方法，接收Context参数，使用当前应用程序包名为文件名
+
+		存储数据 :
+		
+			1. 调用SharedPreferences对象的edit()方法获取一个SharedPreferences.Editor对象
+			2. 向Editor对象中添加数据putBoolean、putString等
+			3. 调用commit()方法提交数据
+
+3. SQLite数据库存储 :
+		
+		默认存储路径：/data/data/<PackageName>/databases
+		数据类型 : integer 整型 real 浮点 text 文本类型 blob 二进制类型
+		使用方法 ：继承SQLiteOpenHelper，重写构造方法和 onCreate
+		升级数据库时调用 onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)方法
+		例 ：
+		
+			@Override  
+    		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {   
+          		db.execSQL("drop table if exists Book");
+          		onCreate(db):
+    		} 
+    	在MainActivity中只需将version改为大于原来版本号即可 ：
+    	
+    		MyDatabaseHelper helper = new MyDatabaseHelper(this,"BookStore.db",null,2);
+
+4. ContentProvider ：
+		
+		1. 继承ContentProvider重写增删该查方法(若多表操作用UriMatcher)
+			private static final String AUTHORITY = "com.scott.provider.PersonProvider";  
+    		private static final int PERSON_ALL = 0;  
+    		private static final int PERSON_ONE = 1;
+    		
+    		matcher = new UriMatcher(UriMatcher.NO_MATCH);  
+          
+        	matcher.addURI(AUTHORITY, "path（一般是表名）", PERSON_ALL);   //匹配记录集合  
+        	matcher.addURI(AUTHORITY, "path", PERSON_ONE);
+        	
+        	 switch (match) {
+        	   
+        	case PERSON_ALL:  
+            
+            break;  
+        	case PERSON_ONE:  
+                       
+            break;  
+        default:  
+            throw new IllegalArgumentException("Unknown URI: " + uri);  
+        }  
+	  
+		2. 在AndroidManifest.xml注册 ：
+		
+			 <application android:icon="@drawable/icon" android:label="@string/app_name">
+			 		<provider  android:authorities="com.rp.mycontentprovider"
+			 					android:name=".MyContentProvider"
+			 					android:multiprocess="true"
+            					android:exported="true"/>
+         	</application>
+        3. 用ContentResolver解析数据 ：
+        	
+        	 private static final Uri PERSON_ALL_URI = Uri.parse("content://" + AUTHORITY + "/persons"); 
+        	 增删该查方法中传入PERSON_ALL_URI
+5. 网络存储
+
+### 支付SDK ：
+
+### 数组与链表的区别 ：
+1. 数组 ：
+
+		1. 数组是将元素在内存中连续存放，由于每个元素占用内存相同，可以通过下标迅速访问数组中任何元素
+		2. 如果想删除一个元素，需要移动大量元素去填掉被移动的元素
+		3. 所以应用需要快速访问数据，很少或不插入和删除元素，就应该用数组
+		
+2. 链表 ：
+		
+		1. 链表恰好相反，链表中的元素在内存中不是顺序存储的，而是通过存在元素中的指针联系到一起
+		2. 如果要访问链表中一个元素，需要从第一个元素开始，一直找到需要的元素位置，但是增加和删除一个元素对于链表数据结构就非常简单了，只要修改元素中的指针就可以了
+		3. 如果应用需要经常插入和删除元素你就需要用链表数据结构了
+		
+### CharSequence与String的关系 ：
+	CharSequence 是 char 值的一个序列接口，String 继承于CharSequence，除了String实现了CharSequence之外，StringBuffer(线程安全的)和StringBuilder(非线程安全的)也实现了CharSequence接口
+	
+### HashMap的底层模型 ：
+	HashMap底层模型是一个链表的数组，数组的元素是一个Entry拥有一个Entry.next的模拟指针，先通过key的hashcode判断数组位置，为null则插入，不为空则遍历链表插入
+	
+### Android字体设置 ：
+方法一：XML中使用android默认字体 ：
+	
+	在TextView中使用Android:typeface属性加载 Android 系统默认支持三种字体，分别为：“sans”, “serif”, “monospace"
+	
+方法二：在Android中可以引入其他字体 ：
+	
+	首先要将字体文件保存在assets/fonts/目录下
+	然后 Typeface typeFace =Typeface.createFromAsset(getAssets(),"fonts/HandmadeTypewriter.ttf")
+	最后 textView.setTypeface(typeFace)
+	
+### Android四层架构 ：
+
+ 
 ### 软件版本号的更新 ：
 	首先调用getPackageManager()获取PackageManager	然后PackageManager对象调用getPackageInfo()获得PackageInfo对象	接着PackageInfo对象获取versionCode属性	最后获取服务器最新版本号与versionCode属性作比较

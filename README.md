@@ -634,7 +634,7 @@ public
 	最后 textView.setTypeface(typeFace)
 	
 ### Android四层架构 ：
-
+![](https://github.com/RPCheung/Android-Interview-knowledge/blob/master/4.jpg)
  
 ### 软件版本号的更新 ：
 	首先调用getPackageManager()获取PackageManager	然后PackageManager对象调用getPackageInfo()获得PackageInfo对象	接着PackageInfo对象获取versionCode属性	最后获取服务器最新版本号与versionCode属性作比较
